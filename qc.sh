@@ -24,6 +24,6 @@ data_folder = /home/ibs37546/data
 fastqc -t 1 --nogroup --noextract $data_folder/*fastq.gz
 
 # Trimming the reads using Trimmomatic, it is important to point to the software where the file containing the Nextera adapters sequences is.
-cat ./list | while read in; do bash clipping.sh "$in"; done 
+cat ./list | while read in; do bash clipping.sh "$in"; done
 
-#there are still some errors, but it works for now
+#there are still some errors at the end, but it works for now

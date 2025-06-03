@@ -18,7 +18,6 @@ fsr1="$1$sr1$fq"
 fpe2="$1$pe2$fq"
 fsr2="$1$sr2$fq"
 
-
 data_folder=/home/ibs37546/data
 
 cd /home/ibs37546/data/
