@@ -16,14 +16,52 @@
 ml FastQC/0.11.9-Java-11
 ml Trimmomatic/0.39-Java-13
 ml BWA/0.7.18-GCCcore-13.3.0
+ml SAMtools/1.18-GCC-12.3.0
+ml BCFtools/1.18-GCC-12.3.0
 
-data_folder = /home/ibs37546/data
+
+#Data folder
+#I have no idea why setting the data folder does not work
+data_folder="/home/ibs37546/data"
+
 
 # The genome and reads were downloaded from online databases, in this case NCBI.
 # The first step is to evaluate the quality of the reads with FastQC
-fastqc -t 1 --nogroup --noextract $data_folder/*fastq.gz
+
+# for some dumb reason, fastqc does not work by using paths, so we need to go in the data folder,
+# with cd
+cd ~/data/
+fastqc -t 8 --nogroup --noextract *.fastq.gz
 
 # Trimming the reads using Trimmomatic, it is important to point to the software where the file containing the Nextera adapters sequences is.
-cat ./list | while read in; do bash clipping.sh "$in"; done
+cd ~/ecoli/
 
-#there are still some errors at the end, but it works for now
+cat ./list | while read in; do bash clipping.sh "$in"; done
+mv ~/data/*.fq ~/data/trimmed/  #moving trimmed files to a separate folder
+
+# New fastqc to check if adapters were correctly removed
+cd /home/ibs37546/data/trimmed/
+
+fastqc -t 8 --nogroup --noextract *.fq
+
+# Indexing the genome for alignment
+bwa index $data_folder/ecoli_reference.fna
+
+# Align the trimmed samples to the reference genome
+for fwd in $data_folder/trimmed/*_PE_1.fq
+do
+	sample=$(basename $fwd _PE_1.fq)
+	echo "Aligning $sample"
+	rev=$data_folder/trimmed/${sample}_PE_2.fq
+	bwa mem $data_folder/ecoli_reference.fna $fwd $rev > ~/ecoli/results/$sample.sam
+
+	#convert to BAM and sort the files
+	samtools view -S -b ~/ecoli/results/$sample.sam > ~/ecoli/results/$sample.bam
+	samtools sort -o ~/ecoli/results/$sample.sorted.bam ~/ecoli/results/$sample.bam
+
+	#variant calling
+	echo "Variant calling in file $sample"
+	bcftools mpileup -O b -o ~/ecoli/results/$sample.bcf -f $data_folder/ecoli_reference.fna ~/ecoli/results/$sample.bam
+	bcftools call --ploidy -1 -m -v -o ~/ecoli/results/$sample.vcf ~/ecoli/results/$sample.bcf
+
+done
