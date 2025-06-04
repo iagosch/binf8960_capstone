@@ -18,12 +18,11 @@ ml Trimmomatic/0.39-Java-13
 ml BWA/0.7.18-GCCcore-13.3.0
 ml SAMtools/1.18-GCC-12.3.0
 ml BCFtools/1.18-GCC-12.3.0
-
+ml MultiQC/1.14-foss-2022a
 
 #Data folder
 #I have no idea why setting the data folder does not work
 data_folder="/home/ibs37546/data"
-
 
 # The genome and reads were downloaded from online databases, in this case NCBI.
 # The first step is to evaluate the quality of the reads with FastQC
@@ -32,7 +31,7 @@ data_folder="/home/ibs37546/data"
 # with cd
 cd ~/data/
 fastqc -t 8 --nogroup --noextract *.fastq.gz
-
+multiqc -o ~/data/ ~/data/
 # Trimming the reads using Trimmomatic, it is important to point to the software where the file containing the Nextera adapters sequences is.
 cd ~/ecoli/
 
@@ -41,8 +40,9 @@ mv ~/data/*.fq ~/data/trimmed/  #moving trimmed files to a separate folder
 
 # New fastqc to check if adapters were correctly removed
 cd /home/ibs37546/data/trimmed/
-
 fastqc -t 8 --nogroup --noextract *.fq
+
+multiqc -o ~/data/trimmed/ ~/data/trimmed/
 
 # Indexing the genome for alignment
 bwa index $data_folder/ecoli_reference.fna
@@ -57,7 +57,7 @@ do
 
 	#convert to BAM and sort the files
 	samtools view -S -b ~/ecoli/results/$sample.sam > ~/ecoli/results/$sample.bam
-	samtools sort -o ~/ecoli/results/$sample.sorted.bam ~/ecoli/results/$sample.bam
+	samtools sort -o ~/ecoli/results/*.sorted.bam ~/ecoli/results/*.bam
 
 	#variant calling
 	echo "Variant calling in file $sample"
