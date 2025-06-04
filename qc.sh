@@ -21,6 +21,7 @@ ml BCFtools/1.18-GCC-12.3.0
 ml MultiQC/1.14-foss-2022a
 
 #Data folder
+
 #I have no idea why setting the data folder does not work
 data_folder="/home/ibs37546/data"
 
@@ -32,10 +33,15 @@ data_folder="/home/ibs37546/data"
 cd ~/data/
 fastqc -t 8 --nogroup --noextract *.fastq.gz
 multiqc -o ~/data/ ~/data/
+
 # Trimming the reads using Trimmomatic, it is important to point to the software where the file containing the Nextera adapters sequences is.
+# I made a list containing the sequencing samples
+# And a separate script named "clipping.sh" containing the trimmomatic command
+
 cd ~/ecoli/
 
 cat ./list | while read in; do bash clipping.sh "$in"; done
+
 mv ~/data/*.fq ~/data/trimmed/  #moving trimmed files to a separate folder
 
 # New fastqc to check if adapters were correctly removed
@@ -48,7 +54,7 @@ multiqc -o ~/data/trimmed/ ~/data/trimmed/
 bwa index $data_folder/ecoli_reference.fna
 
 # Align the trimmed samples to the reference genome
-for fwd in $data_folder/trimmed/*_PE_1.fq
+for fwd in /home/ibs37546/ecoli/trimmed/*_PE_1.fq
 do
 	sample=$(basename $fwd _PE_1.fq)
 	echo "Aligning $sample"
@@ -60,8 +66,8 @@ do
 	samtools sort -o ~/ecoli/results/*.sorted.bam ~/ecoli/results/*.bam
 
 	#variant calling
-	echo "Variant calling in file $sample"
-	bcftools mpileup -O b -o ~/ecoli/results/$sample.bcf -f $data_folder/ecoli_reference.fna ~/ecoli/results/$sample.bam
-	bcftools call --ploidy -1 -m -v -o ~/ecoli/results/$sample.vcf ~/ecoli/results/$sample.bcf
+        echo "Variant calling in file $sample"
+        bcftools mpileup -O b -o ~/ecoli/results/$sample.bcf -f $data_folder/ecoli_reference.fna ~/ecoli/results/$sample.sorted.bam
+        bcftools call --ploidy 1 -m -v -o ~/ecoli/results/$sample.vcf ~/ecoli/results/$sample.bcf
 
 done
