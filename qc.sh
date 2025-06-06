@@ -69,5 +69,5 @@ do
         echo "Variant calling in file $sample"
         bcftools mpileup -O b -o ~/ecoli/results/$sample.bcf -f $data_folder/ecoli_reference.fna ~/ecoli/results/$sample.sorted.bam
         bcftools call --ploidy 1 -m -v -o ~/ecoli/results/$sample.vcf ~/ecoli/results/$sample.bcf
-
+	bcftools stats ~/ecoli/results/$sample.vcf > $sample.txt
 done
